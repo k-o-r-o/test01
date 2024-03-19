@@ -5,6 +5,16 @@ class Node:
         self.prev = None
 
 class DoublyLinkedList:
+    
+    def to_list(self):
+        result = []
+        current = self.head
+        while current:
+            result.append(current.data)
+            current = current.next
+        return result
+    
+    
     def __init__(self):
         self.head = None
         self.tail = None

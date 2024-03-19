@@ -1,5 +1,6 @@
 from dblyLnkdLst import DoublyLinkedList
 
+
 class bigNum:
     def __init__(self, value='0'):
         self.digits = DoublyLinkedList()
@@ -27,7 +28,17 @@ class bigNum:
                 digit_other = digit_other.next
             result.digits.addLast(sum_val % 10)
             remainder = sum_val // 10
-        result.sign = '+' if result.digits.head.data >= 0 else '-' # less than 0 make it negative
+
+        # Handle result sign based on the initial signs of the operands
+        if self.sign == '-' and other.sign == '-':
+            result.sign = '-'
+        else:
+            result.sign = '+'
+
+        # Remove leading zeros from the result
+        while len(result) > 1 and result.digits.head.data == 0:
+            result.digits.removeFirst()
+
         return result
     
     def __sub__(self, other):
@@ -54,24 +65,34 @@ class bigNum:
         result.sign = '+' if result.digits.head.data >= 0 else '-'
         return result
 
+    @staticmethod
+    def convert_to_linked_list(temp_result):
+        result_linked_list = DoublyLinkedList()
+        leading_zero = True
+        for num in reversed(temp_result):
+            if leading_zero and num == 0:
+                continue
+            leading_zero = False
+            result_linked_list.addFirst(num)
+        if result_linked_list.head is None: 
+            result_linked_list.addFirst(0)
+        return result_linked_list
     
-    def __mul__(self, other):
+    def __mul__(self, other): #if you looked at my d2l comment on my last submit i could not get this to work. i got it working now but had to add in some extra funtions. hope thats ok
         if not isinstance(other, bigNum):
             raise Exception("Operand must be a bigNum")
         result = bigNum()
-        for i, digit_self in enumerate(reversed(self.digits)): #had to look this up
-            remainder = 0 #carry
-            temp = ['0'] * i
-            for digit_other in reversed(other.digits):
-                prod = int(digit_self) * int(digit_other) + remainder
-                temp.append(str(prod % 10))
-                remainder = prod // 10
-            if remainder:
-                temp.append(str(remainder))
-            temp_bigNum = bigNum(''.join(reversed(temp)))
-            result = result + temp_bigNum
         result.sign = '+' if self.sign == other.sign else '-'
+        temp_result = [0] * (len(self.digits.to_list()) + len(other.digits.to_list()))
+        for i, digit_self in enumerate(self.digits.to_list()):
+            for j, digit_other in enumerate(other.digits.to_list()):
+                temp_result[i + j] += digit_self * digit_other
+                temp_result[i + j + 1] += temp_result[i + j] // 10
+                temp_result[i + j] %= 10
+        result.digits = bigNum.convert_to_linked_list(temp_result)
+
         return result
+
     
     def __div__(self, other): #i cannot figure out why this is not working, it has somthing to do with >=. ive tried stack, ai and reformating __div__ so many times
         if not isinstance(other, bigNum):
@@ -92,17 +113,14 @@ class bigNum:
         result.sign = '+' if self.sign == other.sign else '-'  # Determine the sign of the result
         return result
 
-
-
-
-
     def __str__(self):
-        output = '-' if self.sign == '-' else ''
         current = self.digits.head
+        output = '-' if self.sign == '-' and not (len(self) == 1 and self.digits.head.data == 0) else ''
         while current:
             output += str(current.data)
             current = current.next
         return output[::-1]
+
 
     def __len__(self):
         return len(self.digits)
